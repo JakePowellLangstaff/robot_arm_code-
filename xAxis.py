@@ -24,11 +24,12 @@ print("LSS connection done")
 print(lss.LSS.bus)
 
 # Create Servo 1 object ONLY
-myLSS1 = lss.LSS(1)
+myLSS1 = lss.LSS(1)  #x axis
+myLSS2 = lss.LSS(2)  # y axis
 
 positions = [-600,  0,  600]
-#
-
+# THIS IS X AXIS - higher negative more left, higher positive more right Lss1
+positions = [-600,]
 
 
 

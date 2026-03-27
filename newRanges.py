@@ -31,7 +31,7 @@ print(lss.LSS.bus)
 myLSS2 = lss.LSS(2)
 
 # Define safe Y-axis positions (prevents shutdown)
-positions = [-600, 0,  600]
+positions = [-1200,  -600,  -0]
 # higher negative more left
 
 

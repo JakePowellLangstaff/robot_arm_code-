@@ -27,8 +27,8 @@ print(lss.LSS.bus)
 myLSS1 = lss.LSS(1)  # X axis (left/right)
 myLSS2 = lss.LSS(2)  # Y axis (FIXED at -600)
 
-# Fix Y-axis at -600 (claw elevated, no dragging)
-myLSS2.move(-0)
+# Fix Y-axis at -600 (claw elevated, no dragging) 0 is 
+myLSS2.move(-600)
 time.sleep(1)
 print("LSS2 fixed at -600 (Y elevated)")
 
