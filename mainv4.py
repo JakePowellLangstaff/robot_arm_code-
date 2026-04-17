@@ -1,102 +1,59 @@
 ###############################################################################
-# Author:                Sebastien Parent-Charette (support@robotshop.com)
-# Version:               1.0.0
-# Licence:               LGPL-3.0 (GNU Lesser General Public License version 3)
-# 
-# Description:           LSS1(X) + LSS2(Y:-600 fixed) + LSS3(Elbow) + LSS4(Wrist)
-# Mar 2026:              Dr Oisin Cawley
+# Position 1 Test — Smooth Incremental Movement
+# Dr Oisin Cawley  |  Mar 2026
+#
+# Each joint moves in 3 steps from start to goal instead of jumping directly.
 ###############################################################################
 
-# Import required libraries
 import time
-import serial
 import lss
 import lss_const as lssc
-import cv2  # Keep for future camera integration
 
-# Constants
-CST_LSS_Port = "COM7"               # For windows platforms
-CST_LSS_Baud = lssc.LSS_DefaultBaud
+lss.initBus("COM7", lssc.LSS_DefaultBaud)
 
-# Create and open a serial port
-lss.initBus(CST_LSS_Port, CST_LSS_Baud)
-print("LSS connection done")
-print(lss.LSS.bus)
+myLSS1 = lss.LSS(1)
+myLSS2 = lss.LSS(2)
+myLSS3 = lss.LSS(3)
+myLSS4 = lss.LSS(4)
+myLSS5 = lss.LSS(5)
 
-# Create all four servos
-myLSS1 = lss.LSS(1)  # X axis (left/right)
-myLSS2 = lss.LSS(2)  # Y axis (FIXED at -600)
-myLSS3 = lss.LSS(3)  # Elbow (-1200 lowest → 0 extended)
-myLSS4 = lss.LSS(4)  # Wrist (-800 up → 0 neutral → 800 down)
+STEP_WAIT = 1.2   # seconds between each increment — raise for slower movement
 
-# Fix Y-axis at -600 (claw elevated)
-myLSS2.move(-600)
-time.sleep(1)
-print("LSS2 fixed at -600 (Y elevated)")
+def smooth_move(name, servo, start, goal, steps=3):
+    """Move a servo from start to goal in equal increments."""
+    print(f"  {name}  {start} → {goal}  ({steps} steps)")
+    increment = (goal - start) / steps
+    for i in range(1, steps + 1):
+        pos = int(round(start + increment * i))
+        print(f"    step {i}: → {pos}")
+        servo.move(pos)
+        time.sleep(STEP_WAIT)
 
-# Home positions
-myLSS1.move(0)  # X center
-myLSS3.move(0)  # Elbow extended
-myLSS4.move(0)  # Wrist neutral
-time.sleep(1)
+# ── STARTING POSITION ─────────────────────────────────────────────────────────
+print("=" * 50)
+print("STARTING POSITION")
+print("=" * 50)
 
-# Position sets
-x_positions = [-600, 0, 600]          # LSS1: left→center→right
-elbow_positions = [-1200, 0]          # LSS3: lowest→extended
-wrist_positions = [-1200, 0, 1200]      # LSS4: up→neutral→all way down
+myLSS1.move(-900);  time.sleep(2.0)
+myLSS2.move(0);     time.sleep(2.0)
+myLSS3.move(0);     time.sleep(2.0)
+myLSS4.move(0);     time.sleep(2.0)
+myLSS5.move(0);     time.sleep(2.0)
 
-# Loop 5 times
-NUM_LOOPS = 5
+print("\nAt starting position.\n")
 
-print(f"4-Servo test: X={x_positions}, Y=-600(fixed), Elbow={elbow_positions}, Wrist={wrist_positions}")
-print("Press Ctrl+C to stop")
+# ── SMOOTH MOVE TO POSITION 1 ─────────────────────────────────────────────────
+print("=" * 50)
+print("MOVING TO POSITION 1")
+print("=" * 50 + "\n")
 
-try:
-    for loop in range(NUM_LOOPS):
-        print(f"\n--- Loop {loop + 1}/{NUM_LOOPS} ---")
-        
-        # 1. X sweep (others home)
-        print("X sweep...")
-        for x_pos in x_positions:
-            print(f"  X→{x_pos}")
-            myLSS1.move(x_pos)
-            time.sleep(0.5)
-        
-        # 2. Elbow cycle
-        print("Elbow cycle...")
-        for elbow_pos in elbow_positions:
-            print(f"  Elbow→{elbow_pos}")
-            myLSS3.move(elbow_pos)
-            time.sleep(0.7)
-        
-        # 3. Wrist full cycle
-        print("Wrist cycle...")
-        for wrist_pos in wrist_positions:
-            print(f"  Wrist→{wrist_pos}")
-            myLSS4.move(wrist_pos)
-            time.sleep(0.5)
-        
-        # Home all
-        print("→ Home")
-        myLSS1.move(0); myLSS3.move(0); myLSS4.move(0)
-        time.sleep(1)
+smooth_move("LSS4", myLSS4,    0,  -600)
+smooth_move("LSS3", myLSS3,    0,  -900)
+smooth_move("LSS2", myLSS2,    0,   900)
+smooth_move("LSS2", myLSS2,  900,  1300)   # LSS2 second stage
+smooth_move("LSS5", myLSS5,    -600,     0)   # claw — stays closed, edit if needed
 
-    print("\nAll loops completed!")
-    
-except KeyboardInterrupt:
-    print("\nStopped by user")
-
-except Exception as e:
-    print(f"Error: {e}")
-
-finally:
-    # Safe home
-    myLSS1.move(0)
-    myLSS2.move(-600)
-    myLSS3.move(0)
-    myLSS4.move(0)  # Neutral
-    time.sleep(1)
-    
-    del myLSS1, myLSS2, myLSS3, myLSS4
-    lss.closeBus()
-    print("Connection closed safely.")
+print("\nPosition 1 reached.")
+del myLSS1, myLSS2, myLSS3, myLSS4, myLSS5
+lss.closeBus()
+print("Done.")

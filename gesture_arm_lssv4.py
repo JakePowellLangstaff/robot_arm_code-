@@ -8,12 +8,12 @@
 #   One finger (index only)    →  PICKUP_SEQUENCE_1  (pick up item 1)
 #   Peace sign (index+middle)  →  PICKUP_SEQUENCE_2  (pick up item 2)
 #
-# CONFIRMED JOINT RANGES (updated for new arm):
-#   LSS1  base      :  0=straight      | -=right        | +=left
-#   LSS2  shoulder  :  0=parallel/rest | +=up toward air | +600=nearly upright  | NEVER NEGATIVE
-#   LSS3  elbow     :  0=parallel/rest | +=up toward air | +800=half locked out  | NEVER NEGATIVE
-#   LSS4  wrist     :  0=lowest        | -850=straight out from arm
-#   LSS5  claw      :  0=closed        | 600=fully open  ← CONFIRMED
+# CONFIRMED JOINT RANGES:
+#   LSS1  base      :  0=straight  | -=right       | +=left
+#   LSS2  shoulder  :  0=up        | -900=parallel with ground
+#   LSS3  elbow     :  0=straight  | -850=lowest
+#   LSS4  wrist     :  0=lowest    | -850=straight out from arm
+#   LSS5  claw      :  0=closed    | 600=fully open  ← CONFIRMED
 #
 # FIRST RUN: downloads hand_landmarker.task (~8 MB) automatically
 # REQUIRES:  pip install mediapipe opencv-python
@@ -44,89 +44,76 @@ MODEL_PATH = "hand_landmarker.task"
 # ╔═══════════════════════════════════════════════════════════════════════════╗
 # ║              LAB PARTNER — EDIT SEQUENCES HERE                           ║
 # ╠═══════════════════════════════════════════════════════════════════════════╣
-# ║  Each step is a dict of joints to move + how long to wait after.         ║
-# ║  Only include joints that change in that step — omit the rest.           ║
-# ║                                                                           ║
-# ║  CONFIRMED RANGES (new arm):                                              ║
-# ║    lss1  base     :  0 straight | - right      | + left                  ║
-# ║    lss2  shoulder :  0 = resting parallel to table                       ║
-# ║                      +600 = nearly straight up  | NEVER go negative      ║
-# ║    lss3  elbow    :  0 = resting parallel to table                       ║
-# ║                      +800 = elbow half locked out | NEVER go negative    ║
+# ║  CONFIRMED RANGES:                                                        ║
+# ║    lss1  base     :  0 straight | - right  | + left                      ║
+# ║    lss2  shoulder :  0 up       | -900 parallel with ground              ║
+# ║    lss3  elbow    :  0 straight | -850 lowest (bend inward)              ║
 # ║    lss4  wrist    :  0 lowest   | -850 straight out from arm             ║
 # ║    lss5  claw     :  0 closed   | 600 fully open  ← CONFIRMED            ║
-# ║                                                                           ║
-# ║  PICKUP LOGIC with new arm:                                               ║
-# ║    Travel height  = LSS2 high positive, LSS3 high positive (arm up)      ║
-# ║    Descend        = LSS2 and LSS3 toward 0 (arm lowering to table)       ║
-# ║    At table       = LSS2 ~0, LSS3 ~0 (resting height = table level)      ║
-# ║    Lift with item = LSS2 and LSS3 back to positive                       ║
 # ║                                                                           ║
 # ║  Arm HOLDS at end of each sequence — make a FIST to return home          ║
 # ╚═══════════════════════════════════════════════════════════════════════════╝
 
 PICKUP_SEQUENCE_1 = [
-    # ── Item 1  (left side of table) ─────────────────────────────────────────
+    # ── Item 1 ───────────────────────────────────────────────────────────────
 
     # Step 1: open claw fully
     {"lss5": 600, "wait": 1.2},
 
-    # Step 2: swing base left, raise arm to safe travel height
-    {"lss1": -600, "lss2": 400, "lss3": 500, "lss4": -700, "wait": 2.5},
+    # Step 2: swing base, lift shoulder to safe travel height
+    {"lss1": -600, "lss2": -200, "lss3": -100, "lss4": -750, "wait": 2.5},
 
-    # Step 3: begin descending — shoulder and elbow start dropping
-    {"lss2": 250, "lss3": 350, "lss4": -500, "wait": 2.0},
+    # Step 3: start rotating shoulder down and inward
+    {"lss2": -550, "lss3": -350, "lss4": -600, "wait": 2.0},
 
-    # Step 4: mid descent
-    {"lss2": 100, "lss3": 200, "lss4": -300, "wait": 2.0},
+    # Step 4: shoulder pushing toward parallel, elbow folding in
+    {"lss2": -750, "lss3": -600, "lss4": -400, "wait": 2.0},
 
-    # Step 5: near table level — arm almost flat
-    {"lss2": 20, "lss3": 50, "lss4": -150, "wait": 2.0},
+    # Step 5: shoulder near parallel, elbow bent hard inward
+    {"lss2": -850, "lss3": -780, "lss4": -200, "wait": 2.0},
 
-    # Step 6: reach to item — both joints at table level, wrist nearly flat
-    {"lss2": 0, "lss3": 0, "lss4": -80, "wait": 2.0},
+    # Step 6: final depth — elbow at max, wrist nearly flat to table
+    {"lss3": -840, "lss4": -80, "wait": 2.0},
 
-    # Step 7: close claw gradually to grip item
+    # Step 7: close claw gradually (600 → 400 → 200 → 0)
     {"lss5": 400, "wait": 0.7},
     {"lss5": 200, "wait": 0.7},
     {"lss5":   0, "wait": 1.0},
 
-    # Step 8: lift arm back up with item
-    {"lss2": 200, "lss3": 300, "lss4": -500, "wait": 2.0},
-    {"lss2": 400, "lss3": 500, "lss4": -700, "wait": 2.0},
+    # Step 8: lift elbow to clear table with item
+    {"lss3": -550, "lss4": -400, "wait": 2.0},
 
     # ── HOLDS HERE — make a FIST to return home ───────────────────────────────
 ]
 
 PICKUP_SEQUENCE_2 = [
-    # ── Item 2  (right side of table) ────────────────────────────────────────
+    # ── Item 2 ───────────────────────────────────────────────────────────────
 
     # Step 1: open claw fully
     {"lss5": 600, "wait": 1.2},
 
-    # Step 2: swing base right, raise arm to safe travel height
-    {"lss1": -500, "lss2": 400, "lss3": 500, "lss4": -700, "wait": 2.5},
+    # Step 2: swing base, lift shoulder to safe travel height
+    {"lss1": -500, "lss2": -200, "lss3": -100, "lss4": -750, "wait": 2.5},
 
-    # Step 3: begin descending
-    {"lss2": 250, "lss3": 350, "lss4": -500, "wait": 2.0},
+    # Step 3: start rotating shoulder down and inward
+    {"lss2": -550, "lss3": -350, "lss4": -600, "wait": 2.0},
 
-    # Step 4: mid descent
-    {"lss2": 100, "lss3": 200, "lss4": -300, "wait": 2.0},
+    # Step 4: shoulder pushing toward parallel, elbow folding in
+    {"lss2": -750, "lss3": -600, "lss4": -400, "wait": 2.0},
 
-    # Step 5: near table level
-    {"lss2": 20, "lss3": 50, "lss4": -150, "wait": 2.0},
+    # Step 5: shoulder near parallel, elbow bent hard inward
+    {"lss2": -850, "lss3": -780, "lss4": -200, "wait": 2.0},
 
-    # Step 6: reach to item
-    {"lss2": 0, "lss3": 0, "lss4": -80, "wait": 2.0},
+    # Step 6: final depth — elbow at max, wrist nearly flat to table
+    {"lss3": -840, "lss4": -80, "wait": 2.0},
 
-    # Step 7: close claw gradually to grip item
+    # Step 7: close claw gradually (600 → 400 → 200 → 0)
     {"lss5": 400, "wait": 0.7},
     {"lss5": 200, "wait": 0.7},
     {"lss5":   0, "wait": 1.0},
 
-    # Step 8: lift arm back up with item
-    {"lss2": 200, "lss3": 300, "lss4": -500, "wait": 2.0},
-    {"lss2": 400, "lss3": 500, "lss4": -700, "wait": 2.0},
+    # Step 8: lift elbow to clear table with item
+    {"lss3": -550, "lss4": -400, "wait": 2.0},
 
     # ── HOLDS HERE — make a FIST to return home ───────────────────────────────
 ]
@@ -139,9 +126,9 @@ PICKUP_SEQUENCE_2 = [
 # ── HOME POSITION ─────────────────────────────────────────────────────────────
 HOME = {
     "lss1":    0,     # base centered
-    "lss2":  350,     # shoulder raised — clearly above table level
-    "lss3":  400,     # elbow raised — arm up and visible
-    "lss4": -600,     # wrist tucked — away from table
+    "lss2": -200,     # shoulder mostly upright
+    "lss3": -150,     # elbow gently bent
+    "lss4": -700,     # wrist raised — clearly away from table
     "lss5":    0,     # claw closed
 }
 
