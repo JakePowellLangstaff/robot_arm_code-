@@ -1,19 +1,19 @@
 ###############################################################################
 # Gesture-Controlled Robot Arm — LSS1–LSS5
-# Dr Oisin Cawley  |  Mar 2026
+# Dr Oisin Cawley  |  April 2026
 # MediaPipe 0.10+ (Tasks API)
 #
 # GESTURES:
-#   Fist                       →  HOME  (all joints return to neutral)
-#   One finger (index only)    →  PICKUP_SEQUENCE_1  (pick up item 1)
-#   Peace sign (index+middle)  →  PICKUP_SEQUENCE_2  (pick up item 2)
+#   Open palm  (all fingers up)  HOME emergency reset  (return to starting position)
+#   One finger (index only)      PICKUP_SEQUENCE_1  (pick up item)
+#   Peace sign (index+middle)    PICKUP_SEQUENCE_2  (drop off item + return)
 #
-# CONFIRMED JOINT RANGES (updated for new arm):
-#   LSS1  base      :  0=straight      | -=right        | +=left
-#   LSS2  shoulder  :  0=parallel/rest | +=up toward air | +600=nearly upright  | NEVER NEGATIVE
-#   LSS3  elbow     :  0=parallel/rest | +=up toward air | +800=half locked out  | NEVER NEGATIVE
-#   LSS4  wrist     :  0=lowest        | -850=straight out from arm
-#   LSS5  claw      :  0=closed        | 600=fully open  ← CONFIRMED
+# CONFIRMED JOINT RANGES:
+#   LSS1  base      :  0=straight  | -=right        | +=left
+#   LSS2  shoulder  :  0=down      | +=up (600=nearly upright, 1300=max)
+#   LSS3  elbow     :  0=parallel  | -=down (-900=lowest)
+#   LSS4  wrist     :  0=neutral   | -=down (-800=lowest)
+#   LSS5  claw      :  -600=open   | 0=closed
 #
 # FIRST RUN: downloads hand_landmarker.task (~8 MB) automatically
 # REQUIRES:  pip install mediapipe opencv-python
@@ -42,107 +42,150 @@ MODEL_PATH = "hand_landmarker.task"
 
 
 # ╔═══════════════════════════════════════════════════════════════════════════╗
-# ║              LAB PARTNER — EDIT SEQUENCES HERE                           ║
+# ║              SEQUENCES — EDIT STEPS= OR WAIT= VALUES TO TUNE            ║
 # ╠═══════════════════════════════════════════════════════════════════════════╣
-# ║  Each step is a dict of joints to move + how long to wait after.         ║
-# ║  Only include joints that change in that step — omit the rest.           ║
-# ║                                                                           ║
-# ║  CONFIRMED RANGES (new arm):                                              ║
-# ║    lss1  base     :  0 straight | - right      | + left                  ║
-# ║    lss2  shoulder :  0 = resting parallel to table                       ║
-# ║                      +600 = nearly straight up  | NEVER go negative      ║
-# ║    lss3  elbow    :  0 = resting parallel to table                       ║
-# ║                      +800 = elbow half locked out | NEVER go negative    ║
-# ║    lss4  wrist    :  0 lowest   | -850 straight out from arm             ║
-# ║    lss5  claw     :  0 closed   | 600 fully open  ← CONFIRMED            ║
-# ║                                                                           ║
-# ║  PICKUP LOGIC with new arm:                                               ║
-# ║    Travel height  = LSS2 high positive, LSS3 high positive (arm up)      ║
-# ║    Descend        = LSS2 and LSS3 toward 0 (arm lowering to table)       ║
-# ║    At table       = LSS2 ~0, LSS3 ~0 (resting height = table level)      ║
-# ║    Lift with item = LSS2 and LSS3 back to positive                       ║
-# ║                                                                           ║
-# ║  Arm HOLDS at end of each sequence — make a FIST to return home          ║
+# ║  Each step moves one joint to a position then waits.                     ║
+# ║  Steps are broken into small increments to keep movement smooth.         ║
+# ║  Increase "wait" on any step if the servo hasn't finished moving.        ║
 # ╚═══════════════════════════════════════════════════════════════════════════╝
 
+# Sequences are expanded from smooth_move(steps=) calls in the position test
+# script so movement is identical — just expressed as individual waypoints.
+
 PICKUP_SEQUENCE_1 = [
-    # ── Item 1  (left side of table) ─────────────────────────────────────────
+    # ── Pick up item — faithfully expanded from position test script ──────────
+    # Arm HOLDS at end — make OPEN PALM to return home
 
-    # Step 1: open claw fully
-    {"lss5": 600, "wait": 1.2},
+    # LSS4 wrist:  0 → -600  (5 steps of -120)
+    {"lss4": -120, "wait": 1.2},
+    {"lss4": -240, "wait": 1.2},
+    {"lss4": -360, "wait": 1.2},
+    {"lss4": -480, "wait": 1.2},
+    {"lss4": -600, "wait": 1.2},
 
-    # Step 2: swing base left, raise arm to safe travel height
-    {"lss1": -600, "lss2": 400, "lss3": 500, "lss4": -700, "wait": 2.5},
+    # LSS3 elbow:  0 → -900  (5 steps of -180)
+    {"lss3": -180, "wait": 1.2},
+    {"lss3": -360, "wait": 1.2},
+    {"lss3": -540, "wait": 1.2},
+    {"lss3": -720, "wait": 1.2},
+    {"lss3": -900, "wait": 1.2},
 
-    # Step 3: begin descending — shoulder and elbow start dropping
-    {"lss2": 250, "lss3": 350, "lss4": -500, "wait": 2.0},
+    # LSS2 shoulder stage 1:  0 → 900  (5 steps of 180)
+    {"lss2":  180, "wait": 1.2},
+    {"lss2":  360, "wait": 1.2},
+    {"lss2":  540, "wait": 1.2},
+    {"lss2":  720, "wait": 1.2},
+    {"lss2":  900, "wait": 1.2},
 
-    # Step 4: mid descent
-    {"lss2": 100, "lss3": 200, "lss4": -300, "wait": 2.0},
+    # LSS2 shoulder stage 2:  900 → 1300  (5 steps of 80)
+    {"lss2":  980, "wait": 1.2},
+    {"lss2": 1060, "wait": 1.2},
+    {"lss2": 1140, "wait": 1.2},
+    {"lss2": 1220, "wait": 1.2},
+    {"lss2": 1300, "wait": 1.2},
 
-    # Step 5: near table level — arm almost flat
-    {"lss2": 20, "lss3": 50, "lss4": -150, "wait": 2.0},
+    # LSS5 claw close:  -600 → 0  (4 steps of 150)
+    {"lss5": -450, "wait": 1.2},
+    {"lss5": -300, "wait": 1.2},
+    {"lss5": -150, "wait": 1.2},
+    {"lss5":    0, "wait": 1.5},
 
-    # Step 6: reach to item — both joints at table level, wrist nearly flat
-    {"lss2": 0, "lss3": 0, "lss4": -80, "wait": 2.0},
-
-    # Step 7: close claw gradually to grip item
-    {"lss5": 400, "wait": 0.7},
-    {"lss5": 200, "wait": 0.7},
-    {"lss5":   0, "wait": 1.0},
-
-    # Step 8: lift arm back up with item
-    {"lss2": 200, "lss3": 300, "lss4": -500, "wait": 2.0},
-    {"lss2": 400, "lss3": 500, "lss4": -700, "wait": 2.0},
-
-    # ── HOLDS HERE — make a FIST to return home ───────────────────────────────
+    # ── HOLDS HERE with item gripped — show OPEN PALM to go home ─────────────
 ]
 
 PICKUP_SEQUENCE_2 = [
-    # ── Item 2  (right side of table) ────────────────────────────────────────
+    # ── Drop off item then return to starting position ────────────────────────
+    # Sequence ends back at home — no gesture needed to reset
 
-    # Step 1: open claw fully
-    {"lss5": 600, "wait": 1.2},
+    # LSS4 wrist adjust:  -600 → -800  (4 steps of -50)
+    {"lss4": -650, "wait": 1.2},
+    {"lss4": -700, "wait": 1.2},
+    {"lss4": -750, "wait": 1.2},
+    {"lss4": -800, "wait": 1.2},
 
-    # Step 2: swing base right, raise arm to safe travel height
-    {"lss1": -500, "lss2": 400, "lss3": 500, "lss4": -700, "wait": 2.5},
+    # LSS1 base rotation:  -900 → 900  (10 steps of 180) — big sweep, keep fine
+    {"lss1": -720, "wait": 1.2},
+    {"lss1": -540, "wait": 1.2},
+    {"lss1": -360, "wait": 1.2},
+    {"lss1": -180, "wait": 1.2},
+    {"lss1":    0, "wait": 1.2},
+    {"lss1":  180, "wait": 1.2},
+    {"lss1":  360, "wait": 1.2},
+    {"lss1":  540, "wait": 1.2},
+    {"lss1":  720, "wait": 1.2},
+    {"lss1":  900, "wait": 1.2},
 
-    # Step 3: begin descending
-    {"lss2": 250, "lss3": 350, "lss4": -500, "wait": 2.0},
+    # LSS4 wrist settle:  -800 → -600  (4 steps of 50)
+    {"lss4": -750, "wait": 1.2},
+    {"lss4": -700, "wait": 1.2},
+    {"lss4": -650, "wait": 1.2},
+    {"lss4": -600, "wait": 1.2},
 
-    # Step 4: mid descent
-    {"lss2": 100, "lss3": 200, "lss4": -300, "wait": 2.0},
+    # LSS5 claw open:  0 → -600  (4 steps of -150)
+    {"lss5": -150, "wait": 1.2},
+    {"lss5": -300, "wait": 1.2},
+    {"lss5": -450, "wait": 1.2},
+    {"lss5": -600, "wait": 1.5},
 
-    # Step 5: near table level
-    {"lss2": 20, "lss3": 50, "lss4": -150, "wait": 2.0},
+    # ── RETURN TO START ───────────────────────────────────────────────────────
+    # Shoulder up first before anything else moves
 
-    # Step 6: reach to item
-    {"lss2": 0, "lss3": 0, "lss4": -80, "wait": 2.0},
+    # LSS2 shoulder reverse stage 1:  1300  900  (5 steps of -80)
+    {"lss2": 1220, "wait": 1.2},
+    {"lss2": 1140, "wait": 1.2},
+    {"lss2": 1060, "wait": 1.2},
+    {"lss2":  980, "wait": 1.2},
+    {"lss2":  900, "wait": 1.2},
 
-    # Step 7: close claw gradually to grip item
-    {"lss5": 400, "wait": 0.7},
-    {"lss5": 200, "wait": 0.7},
-    {"lss5":   0, "wait": 1.0},
+    # LSS2 shoulder reverse stage 2:  900  0  (5 steps of -180)
+    {"lss2":  720, "wait": 1.2},
+    {"lss2":  540, "wait": 1.2},
+    {"lss2":  360, "wait": 1.2},
+    {"lss2":  180, "wait": 1.2},
+    {"lss2":    0, "wait": 1.2},
 
-    # Step 8: lift arm back up with item
-    {"lss2": 200, "lss3": 300, "lss4": -500, "wait": 2.0},
-    {"lss2": 400, "lss3": 500, "lss4": -700, "wait": 2.0},
+    # LSS3 elbow back:  -900  0  (5 steps of 180)
+    {"lss3": -720, "wait": 1.2},
+    {"lss3": -540, "wait": 1.2},
+    {"lss3": -360, "wait": 1.2},
+    {"lss3": -180, "wait": 1.2},
+    {"lss3":    0, "wait": 1.2},
 
-    # ── HOLDS HERE — make a FIST to return home ───────────────────────────────
+    # LSS4 wrist back:  -600  0  (5 steps of 120)
+    {"lss4": -480, "wait": 1.2},
+    {"lss4": -360, "wait": 1.2},
+    {"lss4": -240, "wait": 1.2},
+    {"lss4": -120, "wait": 1.2},
+    {"lss4":    0, "wait": 1.2},
+
+    # LSS1 base back:  900  -900  (10 steps of -180) — big sweep, keep fine
+    {"lss1":  720, "wait": 1.2},
+    {"lss1":  540, "wait": 1.2},
+    {"lss1":  360, "wait": 1.2},
+    {"lss1":  180, "wait": 1.2},
+    {"lss1":    0, "wait": 1.2},
+    {"lss1": -180, "wait": 1.2},
+    {"lss1": -360, "wait": 1.2},
+    {"lss1": -540, "wait": 1.2},
+    {"lss1": -720, "wait": 1.2},
+    {"lss1": -900, "wait": 1.5},
+
+    # ── BACK AT START — claw open, ready for next pickup ─────────────────────
 ]
 
 # ╔═══════════════════════════════════════════════════════════════════════════╗
-# ║              END OF LAB PARTNER SECTION                                  ║
+# ║              END OF SEQUENCES                                            ║
 # ╚═══════════════════════════════════════════════════════════════════════════╝
 
 
-# ── HOME POSITION ─────────────────────────────────────────────────────────────
+# ── HOME / STARTING POSITION ──────────────────────────────────────────────────
+# Matches the starting position from the position test script exactly
 HOME = {
-    "lss1":    0,     # base centered
-    "lss2":  350,     # shoulder raised — clearly above table level
-    "lss3":  400,     # elbow raised — arm up and visible
-    "lss4": -600,     # wrist tucked — away from table
-    "lss5":    0,     # claw closed
+    "lss1": -900,   # base rotated to start side
+    "lss2":    0,   # shoulder down
+    "lss3":    0,   # elbow straight
+    "lss4":    0,   # wrist neutral
+    "lss5": -600,   # claw open
 }
 
 
@@ -174,7 +217,7 @@ class SequenceRunner:
         self._running = True
         print(f"\n[{label}] Starting — {len(sequence)} step(s)")
         for i, step in enumerate(sequence):
-            wait  = step.get("wait", 0.5)
+            wait  = step.get("wait", 1.2)
             moves = {k: v for k, v in step.items() if k != "wait"}
             for joint, pos in moves.items():
                 if joint in servo_map:
@@ -182,18 +225,13 @@ class SequenceRunner:
             print(f"[{label}] Step {i+1}/{len(sequence)}: {moves}  (wait {wait}s)")
             time.sleep(wait)
         self._running = False
-        print(f"[{label}] Done — make a FIST to go home.\n")
+        print(f"[{label}] Done.\n")
 
 
 # ── GESTURE CLASSIFIER ────────────────────────────────────────────────────────
 
 def _finger_up(lm, tip, mcp):
     return lm[tip].y < lm[mcp].y
-
-def _thumb_side(lm):
-    dy = abs(lm[0].y - lm[4].y)
-    dx = abs(lm[4].x - lm[0].x)
-    return dx > dy * 1.2
 
 def classify(lm) -> str:
     idx   = _finger_up(lm,  8,  5)
@@ -202,8 +240,11 @@ def classify(lm) -> str:
     pinky = _finger_up(lm, 20, 17)
     up    = sum([idx, mid, ring, pinky])
 
-    if up == 0 and _thumb_side(lm):  return "FIST"
+    # Open palm — all 4 fingers extended (replaces fist for home)
+    if up == 4:                      return "OPEN"
+    # One finger — index only
     if up == 1 and idx:              return "ONE_FINGER"
+    # Peace sign — index + middle only
     if up == 2 and idx and mid:      return "PEACE"
     return "UNKNOWN"
 
@@ -220,9 +261,9 @@ CONNECTIONS = [
 ]
 
 GESTURE_LABELS = {
-    "FIST":       "HOME",
+    "OPEN":       "HOME",
     "ONE_FINGER": "PICKUP  item 1",
-    "PEACE":      "PICKUP  item 2",
+    "PEACE":      "DROP OFF  item 2",
     "UNKNOWN":    "--",
 }
 
@@ -246,15 +287,15 @@ def draw_overlay(frame, gesture, lm_list, busy):
         color = AMBER
     else:
         label = GESTURE_LABELS.get(gesture, "--")
-        color = GREEN if gesture in ("FIST", "ONE_FINGER", "PEACE") else GREY
+        color = GREEN if gesture in ("OPEN", "ONE_FINGER", "PEACE") else GREY
 
     cv2.rectangle(frame, (0, 0), (w, 55), (0, 0, 0), -1)
     cv2.putText(frame, f"Gesture : {label}", (12, 34),
                 cv2.FONT_HERSHEY_SIMPLEX, 0.85, color, 2)
 
     cv2.rectangle(frame, (0, h - 28), (w, h), (0, 0, 0), -1)
-    cv2.putText(frame, "Fist=HOME   1 finger=Item1   Peace=Item2   Q=quit",
-                (10, h - 9), cv2.FONT_HERSHEY_SIMPLEX, 0.45, (160, 160, 160), 1)
+    cv2.putText(frame, "Open palm=HOME   1 finger=Pickup   Peace=Drop off   Q=quit",
+                (10, h - 9), cv2.FONT_HERSHEY_SIMPLEX, 0.42, (160, 160, 160), 1)
 
 
 # ── MODEL DOWNLOAD ────────────────────────────────────────────────────────────
@@ -291,16 +332,17 @@ def main():
     }
 
     def go_home():
+        """Send all joints directly to starting position."""
         for joint, pos in HOME.items():
             servo_map[joint].move(pos)
-        print("[HOME]  All joints returning to rest position")
+        print("[HOME]  All joints returning to starting position")
 
     runner = SequenceRunner()
 
-    print("[INFO] Homing arm...")
+    print("[INFO] Moving to starting position...")
     go_home()
-    time.sleep(2.0)
-    print("[OK]   Arm at home.\n")
+    time.sleep(3.0)   # give all joints time to reach start before camera opens
+    print("[OK]   At starting position.\n")
 
     base_opts = mp_python.BaseOptions(model_asset_path=MODEL_PATH)
     options   = mp_vision.HandLandmarkerOptions(
@@ -319,9 +361,9 @@ def main():
         return
 
     print("[INFO] Camera ready. Show gestures:\n")
-    print("  Fist        →  HOME")
-    print("  One finger  →  Pickup item 1")
-    print("  Peace (V)   →  Pickup item 2")
+    print("  Open palm   →  HOME (starting position)")
+    print("  One finger  →  Pick up item")
+    print("  Peace (V)   →  Drop off item + return to start")
     print("  Q           →  Quit\n")
 
     last_gesture   = "UNKNOWN"
@@ -348,17 +390,19 @@ def main():
                 gesture = classify(lm_list)
                 now     = time.time()
 
+                # Trigger only on rising edge — not while gesture is held
                 if gesture != last_gesture:
-                    if gesture == "FIST" and not runner.busy:
+
+                    if gesture == "OPEN" and not runner.busy:
                         if now - last_home_time > 1.0:
                             go_home()
                             last_home_time = now
 
                     elif gesture == "ONE_FINGER" and not runner.busy:
-                        runner.run(PICKUP_SEQUENCE_1, servo_map, "ITEM-1")
+                        runner.run(PICKUP_SEQUENCE_1, servo_map, "PICKUP")
 
                     elif gesture == "PEACE" and not runner.busy:
-                        runner.run(PICKUP_SEQUENCE_2, servo_map, "ITEM-2")
+                        runner.run(PICKUP_SEQUENCE_2, servo_map, "DROPOFF")
 
                 last_gesture = gesture
             else:
@@ -376,7 +420,7 @@ def main():
     finally:
         print("[INFO] Shutting down safely...")
         go_home()
-        time.sleep(1.5)
+        time.sleep(2.0)
         cap.release()
         detector.close()
         cv2.destroyAllWindows()
