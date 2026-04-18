@@ -5,7 +5,7 @@
 # HOW TO TUNE SMOOTHNESS PER JOINT:
 #   Increase steps= on any smooth_move line to make that joint smoother.
 #   Increase STEP_WAIT to slow everything down globally.
-#   open palm reutrns it home for emergency 
+
 ################################################################################
 
 import time
