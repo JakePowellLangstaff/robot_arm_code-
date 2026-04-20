@@ -57,38 +57,39 @@ PICKUP_SEQUENCE_1 = [
     # Arm HOLDS at end — make OPEN PALM to return home
 
     # LSS4 wrist:  0 → -600  (5 steps of -120)
-    {"lss4": -120, "wait": 1.2},
-    {"lss4": -240, "wait": 1.2},
-    {"lss4": -360, "wait": 1.2},
-    {"lss4": -480, "wait": 1.2},
-    {"lss4": -600, "wait": 1.2},
+    {"lss4": -120, "wait": 0.6},
+    {"lss4": -240, "wait": 0.6},
+    {"lss4": -360, "wait": 0.6},
+    {"lss4": -480, "wait": 0.6},
+    {"lss4": -600, "wait": 0.6},
+    {"lss4": -700, "wait": 0.6},   # extra step to make wrist a bit smoother
 
     # LSS3 elbow:  0 → -900  (5 steps of -180)
-    {"lss3": -180, "wait": 1.2},
-    {"lss3": -360, "wait": 1.2},
-    {"lss3": -540, "wait": 1.2},
-    {"lss3": -720, "wait": 1.2},
-    {"lss3": -900, "wait": 1.2},
+    {"lss3": -180, "wait": 0.9},
+    {"lss3": -360, "wait": 0.9},
+    {"lss3": -540, "wait": 0.9},
+    {"lss3": -720, "wait": 0.9},
+    {"lss3": -900, "wait": 0.9},
 
     # LSS2 shoulder stage 1:  0 → 900  (5 steps of 180)
-    {"lss2":  180, "wait": 1.2},
-    {"lss2":  360, "wait": 1.2},
-    {"lss2":  540, "wait": 1.2},
-    {"lss2":  720, "wait": 1.2},
-    {"lss2":  900, "wait": 1.2},
+    {"lss2":  180, "wait": 0.9},
+    {"lss2":  360, "wait": 0.9},
+    {"lss2":  540, "wait": 0.9},
+    {"lss2":  720, "wait": 0.9},
+    {"lss2":  900, "wait": 0.9},
 
     # LSS2 shoulder stage 2:  900 → 1300  (5 steps of 80)
-    {"lss2":  980, "wait": 1.2},
-    {"lss2": 1060, "wait": 1.2},
-    {"lss2": 1140, "wait": 1.2},
-    {"lss2": 1220, "wait": 1.2},
-    {"lss2": 1300, "wait": 1.2},
+    {"lss2":  980, "wait": 0.9},
+    {"lss2": 1060, "wait": 0.9},
+    {"lss2": 1140, "wait": 0.9},
+    {"lss2": 1220, "wait": 0.9},
+    {"lss2": 1300, "wait": 0.9},
 
     # LSS5 claw close:  -600 → 0  (4 steps of 150)
-    {"lss5": -450, "wait": 1.2},
-    {"lss5": -300, "wait": 1.2},
-    {"lss5": -150, "wait": 1.2},
-    {"lss5":    0, "wait": 1.5},
+    {"lss5": -450, "wait": 0.9},
+    {"lss5": -300, "wait": 0.9},
+    {"lss5": -150, "wait": 0.9},
+    {"lss5":   -5, "wait": 0.9},
 
     # ── HOLDS HERE with item gripped — show OPEN PALM to go home ─────────────
 ]
@@ -98,10 +99,10 @@ PICKUP_SEQUENCE_2 = [
     # Sequence ends back at home — no gesture needed to reset
 
     # LSS4 wrist adjust:  -600 → -800  (4 steps of -50)
-    {"lss4": -650, "wait": 1.2},
-    {"lss4": -700, "wait": 1.2},
-    {"lss4": -750, "wait": 1.2},
-    {"lss4": -800, "wait": 1.2},
+    {"lss4": -650, "wait": 0.9},
+    {"lss4": -700, "wait": 0.9},
+    {"lss4": -750, "wait": 0.9},
+    {"lss4": -800, "wait": 0.9},
 
     # LSS1 base rotation:  -900 → 900  (10 steps of 180) — big sweep, keep fine
     {"lss1": -720, "wait": 1.2},
@@ -116,59 +117,53 @@ PICKUP_SEQUENCE_2 = [
     {"lss1":  900, "wait": 1.2},
 
     # LSS4 wrist settle:  -800 → -600  (4 steps of 50)
-    {"lss4": -750, "wait": 1.2},
-    {"lss4": -700, "wait": 1.2},
-    {"lss4": -650, "wait": 1.2},
-    {"lss4": -600, "wait": 1.2},
+    {"lss4": -750, "wait": 0.9},
+    {"lss4": -700, "wait": 0.9},
+    {"lss4": -650, "wait": 0.9},
+    {"lss4": -600, "wait": 0.9},
 
     # LSS5 claw open:  0 → -600  (4 steps of -150)
-    {"lss5": -150, "wait": 1.2},
-    {"lss5": -300, "wait": 1.2},
-    {"lss5": -450, "wait": 1.2},
-    {"lss5": -600, "wait": 1.5},
+    {"lss5": -150, "wait": 0.9},
+    {"lss5": -300, "wait": 0.9},
+    {"lss5": -450, "wait": 0.9},
+    {"lss5": -600, "wait": 0.9},
 
     # ── RETURN TO START ───────────────────────────────────────────────────────
     # Shoulder up first before anything else moves
 
     # LSS2 shoulder reverse stage 1:  1300  900  (5 steps of -80)
-    {"lss2": 1220, "wait": 1.2},
-    {"lss2": 1140, "wait": 1.2},
-    {"lss2": 1060, "wait": 1.2},
-    {"lss2":  980, "wait": 1.2},
-    {"lss2":  900, "wait": 1.2},
+    {"lss2": 1220, "wait": 0.9},
+    {"lss2": 1140, "wait": 0.9},
+    {"lss2": 1060, "wait": 0.9},
+    {"lss2":  980, "wait": 0.9},
+    {"lss2":  900, "wait": 0.9},
 
     # LSS2 shoulder reverse stage 2:  900  0  (5 steps of -180)
-    {"lss2":  720, "wait": 1.2},
-    {"lss2":  540, "wait": 1.2},
-    {"lss2":  360, "wait": 1.2},
-    {"lss2":  180, "wait": 1.2},
-    {"lss2":    0, "wait": 1.2},
+    {"lss2":  720, "wait": 0.9},
+    {"lss2":  540, "wait": 0.9},
+    {"lss2":  360, "wait": 0.9},
+    {"lss2":  180, "wait": 0.9},
+    {"lss2":    0, "wait": 0.9},
 
     # LSS3 elbow back:  -900  0  (5 steps of 180)
-    {"lss3": -720, "wait": 1.2},
-    {"lss3": -540, "wait": 1.2},
-    {"lss3": -360, "wait": 1.2},
-    {"lss3": -180, "wait": 1.2},
-    {"lss3":    0, "wait": 1.2},
+    {"lss3": -720, "wait": 0.9},
+    {"lss3": -540, "wait": 0.9},
+    {"lss3": -360, "wait": 0.9},
+    {"lss3": -180, "wait": 0.9},
+    {"lss3":    0, "wait": 0.9},
 
     # LSS4 wrist back:  -600  0  (5 steps of 120)
-    {"lss4": -480, "wait": 1.2},
-    {"lss4": -360, "wait": 1.2},
-    {"lss4": -240, "wait": 1.2},
-    {"lss4": -120, "wait": 1.2},
-    {"lss4":    0, "wait": 1.2},
+    {"lss4": -480, "wait": 0.9},
+    {"lss4": -360, "wait": 0.9},
+    {"lss4": -240, "wait": 0.9},
+    {"lss4": -120, "wait": 0.9},
+    {"lss4":    0, "wait": 0.9},
 
     # LSS1 base back:  900  -900  (10 steps of -180) — big sweep, keep fine
-    {"lss1":  720, "wait": 1.2},
-    {"lss1":  540, "wait": 1.2},
-    {"lss1":  360, "wait": 1.2},
-    {"lss1":  180, "wait": 1.2},
-    {"lss1":    0, "wait": 1.2},
-    {"lss1": -180, "wait": 1.2},
-    {"lss1": -360, "wait": 1.2},
-    {"lss1": -540, "wait": 1.2},
-    {"lss1": -720, "wait": 1.2},
-    {"lss1": -900, "wait": 1.5},
+    {"lss1":  720, "wait": 0.9},
+    {"lss1":  180, "wait": 0.9},
+    {"lss1": -360, "wait": 0.9},
+    {"lss1": -900, "wait": 0.9},
 
     # ── BACK AT START — claw open, ready for next pickup ─────────────────────
 ]
