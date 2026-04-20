@@ -1,5 +1,5 @@
 # Gesture-Controlled Robot Arm
-
+# python gesture_arm_lssv3.py
 Control a Lynxmotion Smart Servo arm using hand gestures detected through a laptop webcam. No keyboard input needed during operation.
 
 **Demo:** https://www.youtube.com/shorts/da9gX9PGN7k
